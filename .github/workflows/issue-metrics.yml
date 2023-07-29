@@ -14,6 +14,7 @@ jobs:
         id: release-date
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
+          result-encoding: string
           script: |
             const releases = await github.rest.repos.listReleases({
               owner: context.repo.owner,
