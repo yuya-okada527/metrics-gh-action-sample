@@ -1,0 +1,46 @@
+name: Monthly issue metrics
+on:
+  pull_request:
+    type: [opened]
+
+jobs:
+  build:
+    name: issue metrics
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get Latest Release Date And Set Current Date
+        uses: actions/github-script@v5
+        id: release-date
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const releases = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            const targetRelease = releases.data.find(release => release.name.includes("定期"));
+
+            if (targetRelease) {
+              const publishDate = new Date(targetRelease.published_at).toISOString().split('T')[0]
+              console.log(`Found release date: ${publishDate}`);
+              return publishDate;
+            } else {
+              console.log("No matching release found.");
+              return "";
+            }
+      - name: Get today's date and set to env
+        run: |
+          echo "today=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+
+      - name: Run issue-metrics tool
+        uses: github/issue-metrics@v2
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SEARCH_QUERY: 'repo:yuya-okada527/metrics-gh-action-sample is:pr closed${{ steps.release-date.outputs.result }}..${{ env.today }} -reason:"not planned"'
+
+      - name: Post sticky comment from file
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          path: ./issue_metrics.md
