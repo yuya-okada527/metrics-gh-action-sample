@@ -1,4 +1,4 @@
-name: Monthly issue metrics
+name: issue-metrics
 on:
   pull_request:
     type: [opened]
@@ -14,6 +14,7 @@ jobs:
         id: release-date
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
+          result-encoding: string
           script: |
             const releases = await github.rest.repos.listReleases({
               owner: context.repo.owner,
@@ -37,7 +38,7 @@ jobs:
         uses: github/issue-metrics@v2
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SEARCH_QUERY: 'repo:yuya-okada527/metrics-gh-action-sample is:pr closed${{ steps.release-date.outputs.result }}..${{ env.today }} -reason:"not planned"'
+          SEARCH_QUERY: 'repo:yuya-okada527/metrics-gh-action-sample is:pr closed:${{ steps.release-date.outputs.result }}..${{ env.today }} -reason:"not planned"'
 
       - name: Post sticky comment from file
         uses: marocchino/sticky-pull-request-comment@v2
